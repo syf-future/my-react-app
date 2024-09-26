@@ -1,25 +1,41 @@
-import logo from './logo.svg';
-import './App.css';
+/**
+ * 项目的根组件
+ * App -> index.js -> public/index.html 31行 root
+ * @returns 
+ */
 
-function App() {
+import { createContext, useContext } from "react";
+
+const MsgContext = createContext();
+
+function A() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      子组件
+      <B />
+    </div>
+  );
+}
+function B() {
+  const msg = useContext(MsgContext)
+  return (
+    <div>
+      孙组件
+      <p>父组件的数据：{msg}</p>
+    </div>
+  );
+}
+function App() {
+  const msg = "父组件的数据"
+  return (
+    <div>
+      <MsgContext.Provider value={msg}>
+        <A />
+      </MsgContext.Provider>
+      父组件
+
     </div>
   );
 }
 
-export default App;
+export default App    //导出方法 可供外部调用
