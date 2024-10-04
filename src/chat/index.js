@@ -3,7 +3,6 @@ import { Avatar, Tooltip } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IdcardOutlined, PoweroffOutlined, IdcardTwoTone, HeartTwoTone, FolderTwoTone, MessageTwoTone, MessageOutlined, FolderOutlined, HeartOutlined, SettingOutlined, SettingTwoTone } from '@ant-design/icons';
 import CollectSub from './element/subPage/collectSub';
-import CompileSub from './element/subPage/compileSub';
 import FileSub from './element/subPage/fileSub';
 import LinkmanSub from './element/subPage/linkmanSub';
 import MessageSub from './element/subPage/messageSub';
@@ -12,7 +11,6 @@ import Message from '../chat/element/message';
 import Linkman from '../chat/element/linkman';
 import File from '../chat/element/file';
 import Collect from '../chat/element/collect';
-import Compile from '../chat/element/compile';
 import { UserInfoState } from '../common/cookies/userInfoState';
 import { ClientState } from '../common/status/clientState';
 import { LoginState } from '../common/status/loginState';
@@ -57,54 +55,73 @@ const ToolIcon = (props) => {
     }
 }
 
-const chosePage = (pageState, getFrendInfo) => {
-    switch (pageState) {
-        case "1":
-            return (< Message getFrendInfo={getFrendInfo} />);
-        case "2":
-            return (< Linkman />);
-        case "3":
-            return (< File />);
-        case "4":
-            return (< Collect />);
-        case "5":
-            return (< Compile />);
-        default:
-            return (<Message />);
-    }
-}
-
-const choseSub = (pageState, frendInfo) => {
-    // console.log(pageState)
-    switch (pageState) {
-        case "1":
-            console.log("加载聊天界面")
-            return (< MessageSub frendInfo={frendInfo} />);
-        case "2":
-            return (< LinkmanSub />);
-        case "3":
-            return (< FileSub />);
-        case "4":
-            return (< CollectSub />);
-        case "5":
-            return (< CompileSub />);
-        default:
-            return (<DefaultSub />);
-    }
-}
-
 const Chat = () => {
+    const route = useNavigate();
     const { sessionId } = useParams();
-    const route = useNavigate()
-    const [pageState, setPageState] = useState("1")
+    const [pageState, setPageState] = useState("1");
     const changPage = (state) => {
         // 当子组件调用时 打印子组件的数据
         setPageState(state)
     }
-    const [frendInfo, setFrendInfo] = useState({})
+    const [frendInfo, setFrendInfo] = useState({});
+    /**
+     * 回调函数 获取 子组件中点击的好友信息 
+     * @param {点击的好友信息} frendInfo 
+     */
     const getFrendInfo = (frendInfo) => {
         // 当子组件调用时 打印子组件的数据
         setFrendInfo(frendInfo)
+    }
+    const [messageInfo, setMessageInfo] = useState({});
+    /**
+         * 回调函数 获取 孙组件中发送的信息
+         * @param {点击的好友信息} frendInfo 
+         */
+    const getMsgInfo = (messageInfo) => {
+        // 当子组件调用时 打印子组件的数据
+        setMessageInfo(messageInfo)
+    }
+
+    /**
+ * 选择子组件
+ * @param {点击的状态  好友/通讯录/文件/收藏} pageState 
+ * @param {回调函数 获取点击的好友信息} getFrendInfo 
+ * @returns 
+ */
+    const chosePage = () => {
+        switch (pageState) {
+            case "1":
+                return (< Message messageInfo={messageInfo} getFrendInfo={getFrendInfo} />);
+            case "2":
+                return (< Linkman />);
+            case "3":
+                return (< File />);
+            case "4":
+                return (< Collect />);
+            default:
+                return (<Message />);
+        }
+    }
+
+    /**
+     * 选择孙组件
+     * @param {点击的状态  好友/通讯录/文件/收藏} pageState 
+     * @param {好友信息} frendInfo 
+     * @returns 
+     */
+    const choseSub = () => {
+        switch (pageState) {
+            case "1":
+                return (< MessageSub frendInfo={frendInfo} getMsgInfo = {getMsgInfo} />);
+            case "2":
+                return (< LinkmanSub />);
+            case "3":
+                return (< FileSub />);
+            case "4":
+                return (< CollectSub />);
+            default:
+                return (<DefaultSub />);
+        }
     }
     const close = () => {
         console.log("退出");
@@ -199,7 +216,7 @@ const Chat = () => {
                 height: '100%',
                 border: '1px solid #ccc',
             }}>
-                {chosePage(pageState, getFrendInfo)}
+                {chosePage()}
             </div>
 
             <div style={{
@@ -207,7 +224,7 @@ const Chat = () => {
                 height: '100%',
                 border: '1px solid #ccc',
             }}>
-                {choseSub(pageState, frendInfo)}
+                {choseSub()}
             </div>
         </div>
     );

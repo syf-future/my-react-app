@@ -42,12 +42,10 @@ export const Socket = {
         // 监听错误事件
         so.onerror = function (event) {
             console.error('WebSocket 错误:', event);
-            Socket.deleteSocket();
         };
         // 监听关闭事件
         so.onclose = function (event) {
             console.log('WebSocket 连接关闭，代码:', event.code, '原因:', event.reason);
-            Socket.deleteSocket();
         };
     },
 

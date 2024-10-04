@@ -10,74 +10,8 @@ import { EnumSendType } from '../../../common/enums/enumSendType';
 import { MessageState } from '../../../common/status/messageState';
 import { Socket } from '../../../socket';
 import { Message } from '../../../common/types/message';
+import { DateUtils } from '../../../common/utils/dateUtils';
 const { TextArea } = Input;
-
-const formatTime = (time) => {
-    const date = new Date(time);
-    const now = new Date();
-
-    // 判断是否为今天
-    const isToday = date.getFullYear() === now.getFullYear() &&
-        date.getMonth() === now.getMonth() &&
-        date.getDate() === now.getDate();
-
-    if (isToday) {
-        // 返回 "时:分" 格式
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    } else {
-        // 返回 "月 日 时:分" 格式
-        return `${(date.getMonth() + 1).toString().padStart(2, '0')}月${date.getDate().toString().padStart(2, '0')}日 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    }
-}
-
-const ShowMsg = (props) => {
-
-    const { sessionId } = useParams();
-    const msg = props.msg;
-    const frendInfo = props.frendInfo;
-    const userInfo = UserInfoState.getUserInfo(sessionId);
-    //判断该消息 是哪个用户发的
-    const isUser = msg.userId === userInfo.serialNo;
-
-
-    return (
-        <>
-            {/* 根据逻辑判断是否显示时间 */}
-            {props.showTime && (
-                <div style={{
-                    textAlign: 'center',
-                    fontSize: '12px',
-                    color: 'gray',
-                    marginTop: '10px',
-                    marginBottom: '5px'
-                }}>
-                    {formatTime(msg.sendDate)}
-                </div>
-            )}
-            {/* 展示聊天记录 */}
-            <div style={{
-                margin: '10px',
-                display: 'flex',
-                justifyContent: isUser ? 'flex-end' : 'flex-start',  //根据用户判断在左还是右
-                // alignItems: 'center'
-            }}>
-                {!isUser && <span style={{ marginRight: '10px' }}>{<Avatar size={40} src={<img src={frendInfo.picture} alt="头像" />} />}</span>}
-
-                <span style={{
-                    maxWidth: '50%',
-                    padding: '10px',
-                    backgroundColor: isUser ? '#e6f7ff' : '#f0f0f0',  //消息框背景颜色
-                    borderRadius: '10px' //圆角框
-                }}>
-                    {msg.content}
-                </span>
-
-                {isUser && <span style={{ marginLeft: '10px' }}>{<Avatar size={40} src={<img src={userInfo.picture} alt="头像" />} />}</span>}
-            </div>
-        </>
-
-    );
-}
 
 function MessageSub(props) {
     const { sessionId } = useParams();
@@ -87,17 +21,16 @@ function MessageSub(props) {
     const [value, setValue] = useState("");
     // 消息类型 默认是文本
     const [messageType, setMessageType] = useState(EnumMessageType.TEXT);
-    //发送类型 默认是好友
-    const [sendType, setSemdType] = useState(EnumSendType.FRIEND);
     // 用来处理接收消息
     const [currentMessage, setCurrentMessage] = useState(null);  
     //当前好友信息
     const frendInfo = props.frendInfo || {};
+    const getMsgInfo = props.getMsgInfo;
     //从Cookies中获取登录的用户信息
     const userInfo = UserInfoState.getUserInfo(sessionId);
 
-    const chatContainerRef = useRef(null); // 创建一个 ref 来引用消息容器
-
+    // 创建一个 ref 来获取dom  实现自动滚动到底部
+    const chatContainerRef = useRef(null); 
     // 当 messageList 更新时，自动滚动到底部
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -129,12 +62,10 @@ function MessageSub(props) {
     useEffect(() => {
         console.log("接收到消息：", currentMessage);
         if (currentMessage !== null) {
-            console.log("接收前：", messageList);
             setMessageList(prevList => [
                 ...prevList,
-                { userId: currentMessage.userId, messageType: "1", content: currentMessage.content, sendDate: formatDate(new Date()) }
+                { userId: currentMessage.userId, messageType: messageType, content: currentMessage.content, sendDate: formatDate(new Date()) }
             ]);
-            console.log("接收后：", messageList);
         }
     }, [currentMessage]);
     /**
@@ -145,6 +76,7 @@ function MessageSub(props) {
             /**
              * 发送点击好友请求   获取与该好友的历史记录
              */
+            // setSendType(frendInfo.sendType);
             postJava('/chat/message/click', { "userId": userInfo.serialNo, "friendId": frendInfo.friendId })
                 .then(response => {
                     if (response.data.code === "200") {
@@ -185,13 +117,15 @@ function MessageSub(props) {
      */
     const sendMsg = async (message, setValue) => {
         if (message) {
+            const msg = { userId: userInfo.serialNo, messageType: "1", content: message, sendDate: formatDate(new Date()) };
             setMessageList(prevList => [
                 ...prevList,
-                { userId: userInfo.serialNo, messageType: "1", content: message, sendDate: formatDate(new Date()) }
+                msg
             ]);
             setValue("");
             //构建消息信息
-            const messageInfo = new MessageInfo(userInfo.serialNo, frendInfo.friendId, null, sendType, messageType, message)
+            const messageInfo = new MessageInfo(userInfo.serialNo, frendInfo.friendId, null, frendInfo.sendType, messageType, message)
+            getMsgInfo(messageInfo);
             await postJava('/chat/message/send', messageInfo)
                 .then(response => {
                     if (response.data.code === "200") {
@@ -270,10 +204,8 @@ function MessageSub(props) {
                 {messageList.map((msg, index) => {
                     // 默认不显示时间
                     let showTime = false;
-
                     if (index === 0) {
-                        // 第一条消息显示时间
-                        showTime = true;
+                        showTime = true;// 第一条消息显示时间
                     } else {
                         // 计算当前消息与上一条消息的时间差
                         const previousMsg = messageList[index - 1];
@@ -285,7 +217,7 @@ function MessageSub(props) {
                     }
 
                     return (
-                        <ShowMsg msg={msg} showTime={showTime} frendInfo={frendInfo} />
+                        <ShowMsg key={index} msg={msg} showTime={showTime} frendInfo={frendInfo} />
                     );
                 })}
             </div>
@@ -298,16 +230,16 @@ function MessageSub(props) {
                 alignItems: 'center',          // 垂直居中对齐
             }}>
                 <span style={{ marginLeft: '20px', fontSize: '20px', cursor: 'pointer' }}>  {/* 第一个表情不需要额外的左边距 */}
-                    <SmileOutlined />
+                    <SmileOutlined onClick={()=>setMessageType(EnumMessageType.IMAGE)}/>
                 </span>
                 <span style={{ marginLeft: '20px', fontSize: '20px', cursor: 'pointer' }}>  {/* 每个后续的表情离左边 20px */}
-                    <FolderOpenOutlined />
+                    <FolderOpenOutlined onClick={() => setMessageType(EnumMessageType.FILE)} />
                 </span>
                 <span style={{ marginLeft: '20px', fontSize: '20px', cursor: 'pointer' }}>
-                    <PictureOutlined />
+                    <PictureOutlined onClick={() => setMessageType(EnumMessageType.IMAGE)} />
                 </span>
                 <span style={{ marginLeft: '20px', fontSize: '20px', cursor: 'pointer' }}>
-                    <PhoneOutlined />
+                    <PhoneOutlined onClick={() => setMessageType(EnumMessageType.VIDEO)} />
                 </span>
             </div>
 
@@ -347,6 +279,55 @@ function MessageSub(props) {
 
         </div>
     )
+}
+
+const ShowMsg = (props) => {
+
+    const { sessionId } = useParams();
+    const msg = props.msg;
+    const frendInfo = props.frendInfo;
+    const userInfo = UserInfoState.getUserInfo(sessionId);
+    //判断该消息 是哪个用户发的
+    const isUser = msg.userId === userInfo.serialNo;
+
+
+    return (
+        <>
+            {/* 根据逻辑判断是否显示时间 */}
+            {props.showTime && (
+                <div style={{
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    color: 'gray',
+                    marginTop: '10px',
+                    marginBottom: '5px'
+                }}>
+                    {DateUtils.formatTimeStr(msg.sendDate)}
+                </div>
+            )}
+            {/* 展示聊天记录 */}
+            <div style={{
+                margin: '10px',
+                display: 'flex',
+                justifyContent: isUser ? 'flex-end' : 'flex-start',  //根据用户判断在左还是右
+                // alignItems: 'center'
+            }}>
+                {!isUser && <span style={{ marginRight: '10px' }}>{<Avatar size={40} src={<img src={frendInfo.picture} alt="头像" />} />}</span>}
+
+                <span style={{
+                    maxWidth: '50%',
+                    padding: '10px',
+                    backgroundColor: isUser ? '#e6f7ff' : '#f0f0f0',  //消息框背景颜色
+                    borderRadius: '10px' //圆角框
+                }}>
+                    {msg.content}
+                </span>
+
+                {isUser && <span style={{ marginLeft: '10px' }}>{<Avatar size={40} src={<img src={userInfo.picture} alt="头像" />} />}</span>}
+            </div>
+        </>
+
+    );
 }
 
 function formatDate(date) {
