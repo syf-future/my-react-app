@@ -1,31 +1,19 @@
 import { SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
-import { Input, List, Avatar, Dropdown, Menu } from 'antd';
-import { postJava } from '../../api';
-import { UserInfoState } from '../../common/cookies/userInfoState';
+import { Input, List, Avatar, Dropdown, Menu, Tooltip } from 'antd';
+import { postJava } from '../../../api';
+import { UserInfoState } from '../../../common/cookies/userInfoState';
 import { useParams } from 'react-router-dom';
-import { DateUtils } from '../../common/utils/dateUtils';
-import { MessageState } from '../../common/status/messageState';
-
-const handleMenuClick = (e) => {
-    console.log('Menu item clicked:', e.key); // 处理菜单项点击事件
-};
-
-// 创建菜单
-const menu = (
-    <Menu onClick={handleMenuClick}>
-        <Menu.Item key="add-friend">添加好友</Menu.Item>
-        <Menu.Item key="add-group">添加群组</Menu.Item>
-        <Menu.Item key="create-group">创建群组</Menu.Item>
-    </Menu>
-);
+import { DateUtils } from '../../../common/utils/dateUtils';
+import { MessageState } from '../../../common/status/messageState';
+import { EnumSubPageType } from '../../../common/enums/enumSubPageType';
 
 function Message(props) {
     //登录后获取的好友信息列表
     //[{"friendId":"好友id/群id","userName":"名称","picture":"头像","sendType":"FRIEND/GROUP","lastMessage":"最后一条消息","lastMessageTime":"最后一条消息时间"}]
     const [friendList, setFriendList] = useState([]);
     //回调参数 传递给父组件点击的是哪个好友
-    const { getFrendInfo, messageInfo } = props;
+    const { getFrendInfo, messageInfo, getSubPage } = props;
     //点击的好友
     const [friendInfo, setFriendInfo] = useState({});
     //鼠标经过列表的状态
@@ -44,6 +32,7 @@ function Message(props) {
         setChoseIndex(index);
         getFrendInfo(item);
         setFriendInfo(item);
+        getSubPage(EnumSubPageType.CHAT);
         // 点击时取消红点
         setFriendList(friendList =>
             friendList.map(frend =>
@@ -83,7 +72,7 @@ function Message(props) {
             .catch(error => {
                 console.error('Error fetching users:', error);
             })
-    }, [sessionId])
+    }, [])
 
     /**
          * 当组件挂载时，订阅 MessageState 的变化
@@ -119,7 +108,7 @@ function Message(props) {
                         } : frend
                 )
             )
-            console.log(Number(friendList.at(0).unreadNum)+1)
+            console.log(Number(friendList.at(0).unreadNum) + 1)
         }
     }, [currentMessage]);
 
@@ -143,14 +132,18 @@ function Message(props) {
                         prefix={< SearchOutlined />}
                     />
                 </span>
-                <Dropdown overlay={menu} trigger={['click']} placement="bottomLeft">
+                <Tooltip title="添加/创建">
                     <PlusOutlined style={{
                         fontSize: '24px',
                         cursor: 'pointer',
                         color: 'gray',
                         marginLeft: '10px', // 直接在这里添加左边距
-                    }} />
-                </Dropdown>
+                    }} 
+                    onClick={()=>getSubPage(EnumSubPageType.ADDITION)}
+                    />
+                </Tooltip>
+
+
 
             </div>
             <div style={{

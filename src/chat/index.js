@@ -1,137 +1,131 @@
 import React, { useState } from 'react';
 import { Avatar, Tooltip } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
-import { IdcardOutlined, PoweroffOutlined, IdcardTwoTone, HeartTwoTone, FolderTwoTone, MessageTwoTone, MessageOutlined, FolderOutlined, HeartOutlined, SettingOutlined, SettingTwoTone } from '@ant-design/icons';
-import CollectSub from './element/subPage/collectSub';
-import FileSub from './element/subPage/fileSub';
+import { IdcardOutlined, PoweroffOutlined, IdcardTwoTone, MessageTwoTone, MessageOutlined, SettingOutlined } from '@ant-design/icons';
 import LinkmanSub from './element/subPage/linkmanSub';
 import MessageSub from './element/subPage/messageSub';
-import DefaultSub from './element/subPage/defaultSub';
-import Message from '../chat/element/message';
-import Linkman from '../chat/element/linkman';
-import File from '../chat/element/file';
-import Collect from '../chat/element/collect';
+import Message from './element/page/message';
+import Linkman from './element/page/linkman';
 import { UserInfoState } from '../common/cookies/userInfoState';
 import { ClientState } from '../common/status/clientState';
 import { LoginState } from '../common/status/loginState';
 import { Socket } from '../socket';
-
-const MessageIcon = (props) => {
-    if (props.state !== "1") {
-        return (< MessageOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("1")} />)
-    } else {
-        return (<MessageTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("1")} />)
-    }
-}
-
-const ContactIcon = (props) => {
-    if (props.state !== "2") {
-        return (< IdcardOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("2")} />)
-    } else {
-        return (<IdcardTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("2")} />)
-    }
-}
-
-const FileIcon = (props) => {
-    if (props.state !== "3") {
-        return (< FolderOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("3")} />)
-    } else {
-        return (< FolderTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("3")} />)
-    }
-}
-
-const FavoriteIcon = (props) => {
-    if (props.state !== "4") {
-        return (< HeartOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("4")} />)
-    } else {
-        return (<HeartTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("4")} />)
-    }
-}
-const ToolIcon = (props) => {
-    if (props.state !== "5") {
-        return (< SettingOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("5")} />)
-    } else {
-        return (< SettingTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => props.onPage("5")} />)
-    }
-}
+import CompileSub from './element/subPage/compileSub';
+import { postJava } from '../api';
+import AddFunction from './element/subPage/addFunction';
+import { EnumSubPageType } from '../common/enums/enumSubPageType';
+import DefaultSub from './element/subPage/defaultSub';
 
 const Chat = () => {
     const route = useNavigate();
     const { sessionId } = useParams();
-    const [pageState, setPageState] = useState("1");
-    const changPage = (state) => {
-        // 当子组件调用时 打印子组件的数据
-        setPageState(state)
-    }
-    const [frendInfo, setFrendInfo] = useState({});
+    const userInfo = UserInfoState.getUserInfo(sessionId);
+    const [pageState, setPageState] = useState("1");        //用于选择子组件(消息/通讯录)
+    const [subPageState, setSubPageState] = useState(EnumSubPageType.DEFAULE);   //用于选择孙组件(默认/聊天框/通讯录/添加)
+    const [frendInfo, setFrendInfo] = useState({});         //用于获取子组件点击的好友
+    const [messageInfo, setMessageInfo] = useState({});     //用于获取孙组件发送的信息
+
     /**
      * 回调函数 获取 子组件中点击的好友信息 
      * @param {点击的好友信息} frendInfo 
      */
     const getFrendInfo = (frendInfo) => {
-        // 当子组件调用时 打印子组件的数据
         setFrendInfo(frendInfo)
     }
-    const [messageInfo, setMessageInfo] = useState({});
     /**
-         * 回调函数 获取 孙组件中发送的信息
-         * @param {点击的好友信息} frendInfo 
-         */
+    * 回调函数 获取 孙组件中发送的信息
+    * @param {点击的好友信息} frendInfo 
+    */
     const getMsgInfo = (messageInfo) => {
         // 当子组件调用时 打印子组件的数据
         setMessageInfo(messageInfo)
     }
+    /**
+     * 回调函数 获取子组件中的点击
+     * @param {添加好友/添加群/创建群} subPage 
+     */
+    const getSubPage = (subPage) => {
+        setSubPageState(subPage)
+    }
 
     /**
- * 选择子组件
- * @param {点击的状态  好友/通讯录/文件/收藏} pageState 
- * @param {回调函数 获取点击的好友信息} getFrendInfo 
- * @returns 
- */
+    * @returns 返回子组件
+    */
     const chosePage = () => {
         switch (pageState) {
             case "1":
-                return (< Message messageInfo={messageInfo} getFrendInfo={getFrendInfo} />);
+                return (< Message messageInfo={messageInfo} getFrendInfo={getFrendInfo} getSubPage={getSubPage} />);
             case "2":
-                return (< Linkman />);
-            case "3":
-                return (< File />);
-            case "4":
-                return (< Collect />);
-            default:
-                return (<Message />);
+                return (< Linkman getSubPage={getSubPage} />);
         }
     }
 
     /**
-     * 选择孙组件
-     * @param {点击的状态  好友/通讯录/文件/收藏} pageState 
-     * @param {好友信息} frendInfo 
-     * @returns 
+     * @returns 返回孙组件
      */
     const choseSub = () => {
-        switch (pageState) {
-            case "1":
-                return (< MessageSub frendInfo={frendInfo} getMsgInfo = {getMsgInfo} />);
-            case "2":
-                return (< LinkmanSub />);
-            case "3":
-                return (< FileSub />);
-            case "4":
-                return (< CollectSub />);
-            default:
-                return (<DefaultSub />);
+        switch (subPageState) {
+            case EnumSubPageType.CHAT:
+                return (< MessageSub frendInfo={frendInfo} getMsgInfo={getMsgInfo} />);
+            case EnumSubPageType.ADDRESS:
+                return (< LinkmanSub getSubPage={getSubPage} />);
+            case EnumSubPageType.ADDITION:
+                return (<AddFunction />)
+            case EnumSubPageType.DEFAULE:
+                return (<DefaultSub />)
         }
     }
-    const close = () => {
+    //控制设置表单
+    const [bool, setBool] = useState(false)
+    const closeCompile = (bool) => {
+        setBool(bool);
+    }
+    const openCompile = () => {
+        if (bool) {
+            console.log(bool)
+            return (<CompileSub closeCompile={closeCompile} />);
+        }
+    }
+    /**
+     * 退出登录
+     */
+    const close = async () => {
         console.log("退出");
         ClientState.deleteClientState();
         LoginState.deleteLoginState();
         UserInfoState.deleteUserInfo(sessionId);
         Socket.deleteSocket();
-        route('/login');
+        await postJava('/chat/user/quit', { "serialNo": userInfo.serialNo })
+            .then(
+                response => {
+                    if (response.data.code === "200") {
+                        route('/login');
+                    }
+                }
+            )
+            .catch(
+                error => {
+                    console.error('Error fetching users:', error);
+                }
+            )
     }
-    const userInfo = UserInfoState.getUserInfo(sessionId);
+    // 点击按钮时的颜色变换
+    const messageIcon = () => {
+        if (pageState !== "1") {
+            return (< MessageOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => setPageState("1")} />)
+        } else {
+            return (<MessageTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => setPageState("1")} />)
+        }
+    }
+    // 点击按钮时的颜色变换
+    const contactIcon = () => {
+        if (pageState !== "2") {
+            return (< IdcardOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => setPageState("2")} />)
+        } else {
+            return (<IdcardTwoTone style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => setPageState("2")} />)
+        }
+    }
+
     return (
         <div style={{
             width: '1100px',
@@ -165,7 +159,7 @@ const Chat = () => {
                 <div style={{ marginTop: '40px' }}>
                     <Tooltip title="消息">  {/* 鼠标悬停时的提示文本 */}
                         <div>
-                            {<MessageIcon state={pageState} onPage={changPage} />}
+                            {messageIcon()}
                         </div>
                     </Tooltip>
                 </div>
@@ -173,31 +167,15 @@ const Chat = () => {
                 <div style={{ marginTop: '40px' }}>
                     <Tooltip title="通讯录">
                         <div>
-                            {<ContactIcon state={pageState} onPage={changPage} />}
-                        </div>
-                    </Tooltip>
-                </div>
-                {/* 文件 */}
-                <div style={{ marginTop: '40px' }}>
-                    <Tooltip title="文件">
-                        <div>
-                            {<FileIcon state={pageState} onPage={changPage} />}
-                        </div>
-                    </Tooltip>
-                </div>
-                {/* 收藏 */}
-                <div style={{ marginTop: '40px' }}>
-                    <Tooltip title="我的收藏">
-                        <div>
-                            {<FavoriteIcon state={pageState} onPage={changPage} />}
+                            {contactIcon()}
                         </div>
                     </Tooltip>
                 </div>
                 {/* 设置 */}
-                <div style={{ marginTop: '150px' }}>
+                <div style={{ marginTop: '300px' }}>
                     <Tooltip title="设置">
                         <div>
-                            {<ToolIcon state={pageState} onPage={changPage} />}
+                            < SettingOutlined style={{ fontSize: '36px', cursor: 'pointer' }} onClick={() => setBool(true)} />
                         </div>
                     </Tooltip>
                 </div>
@@ -225,6 +203,9 @@ const Chat = () => {
                 border: '1px solid #ccc',
             }}>
                 {choseSub()}
+            </div>
+            <div>
+                {openCompile()}
             </div>
         </div>
     );
