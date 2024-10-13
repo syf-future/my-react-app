@@ -17,6 +17,17 @@ export const postJava = (url, data) => axiosJaca.post(url, data,
         }
     }
 );
+// 创建一个发送multipart/form-data请求的函数
+export const formJava = (url, file) => {
+    const formData = new FormData();
+    formData.append('file', file); // 添加文件到FormData对象
+
+    return axiosJaca.post(url, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+};
 
 const axiosPy = axios.create({
     baseURL: '/pyApi', // 替换成你的 API 地址

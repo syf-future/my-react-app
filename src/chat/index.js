@@ -10,11 +10,12 @@ import { UserInfoState } from '../common/cookies/userInfoState';
 import { ClientState } from '../common/status/clientState';
 import { LoginState } from '../common/status/loginState';
 import { Socket } from '../socket';
-import CompileSub from './element/subPage/compileSub';
+import CompileSub from './element/compile/compileSub';
 import { postJava } from '../api';
 import AddFunction from './element/subPage/addFunction';
 import { EnumSubPageType } from '../common/enums/enumSubPageType';
 import DefaultSub from './element/subPage/defaultSub';
+import Information from './element/compile/information';
 
 const Chat = () => {
     const route = useNavigate();
@@ -80,12 +81,22 @@ const Chat = () => {
     const closeCompile = (bool) => {
         setBool(bool);
     }
+    //设置功能
     const openCompile = () => {
         if (bool) {
-            console.log(bool)
             return (<CompileSub closeCompile={closeCompile} />);
         }
     }
+    const [changeBool, setChangeBool] = useState(false);
+    //编辑用户信息功能
+    const changeUserInfo = (changeBool) =>{
+        setChangeBool(changeBool);
+    }
+    const openChageUserInfo = ()=>{
+        if(changeBool){
+            return (<Information changeUserInfo={changeUserInfo}/>);
+        }
+    };
     /**
      * 退出登录
      */
@@ -151,7 +162,12 @@ const Chat = () => {
                 <div style={{ marginTop: '50px' }}>
                     <Tooltip title="个人信息">  {/* 鼠标悬停时的提示文本 */}
                         <div>
-                            <Avatar size={64} src={<img src={userInfo.picture} alt="头像" style={{ cursor: 'pointer' }} />} />
+                            <Avatar size={64} 
+                            src={<img src={userInfo.picture} 
+                            alt="头像" 
+                            style={{ cursor: 'pointer' }} 
+                            onClick={()=>setChangeBool(true)}
+                            />} />
                         </div>
                     </Tooltip>
                 </div>
@@ -206,6 +222,9 @@ const Chat = () => {
             </div>
             <div>
                 {openCompile()}
+            </div>
+            <div>
+                {openChageUserInfo()}
             </div>
         </div>
     );

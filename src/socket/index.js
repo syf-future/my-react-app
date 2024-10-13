@@ -4,11 +4,11 @@ import { LoginState } from "../common/status/loginState";
 import { MessageState } from "../common/status/messageState";
 
 let so = null;
-
+const webSocketUrl = process.env.REACT_APP_WEB_SOCKET_URL;
 export const Socket = {
     connect() {
         if (so === null) {
-            so = new WebSocket('ws://localhost:7070/ws');
+            so = new WebSocket(webSocketUrl);
         }
         // 监听连接成功事件
         so.onopen = function (event) {

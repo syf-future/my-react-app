@@ -21,6 +21,17 @@ export const UserInfoState = {
         return userInfo;
     },
 
+    updateUserInfo(sessionId, updatedInfo) {
+        // 获取当前的用户信息
+        let currentUserInfo = this.getUserInfo(sessionId);
+        if (currentUserInfo) {
+            // 更新用户信息
+            currentUserInfo = { ...currentUserInfo, ...updatedInfo };
+            // 保存更新后的信息
+            this.setUserInfo(sessionId, currentUserInfo);
+        }
+    },
+
     deleteUserInfo(sessionId){
         // 删除存储的用户信息
         Cookies.remove(`USER_INFO-${sessionId}`);
